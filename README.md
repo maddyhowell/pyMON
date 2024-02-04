@@ -9,4 +9,4 @@ This code includes four ways to deal with the background due to granulation (whi
 3. linear: estimates a linear model between the power excess envelope (same method from pySYD implement by Simon Campbell). Subtracts the linear background from power after smoothing.
 4. harvey: fits a harvey-like function to the granulation noise (based on pySYD method). Subtracts the linear background from power after smoothing.
 
-Can access the code by running the jupyter notebook. A prediction for nuamx is needed initially. For M9, M80 & M19, the relation $\nu_{\rm max} = 1.229\times 10^{-19}G_{\rm mag}^{16.89}$
+Can access the code by running the jupyter notebook. A prediction for nuamx is needed initially. For M9, M80 & M19, the relation $\nu_{\rm max} = 1.229\times 10^{-19}G_{\rm mag}^{16.89}$. The evolutionary stage is needed as well. The code is set up for metal-poor low mass red giants (RGB, HB, AGB).
