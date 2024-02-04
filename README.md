@@ -8,3 +8,5 @@ This code includes four ways to deal with the background due to granulation (whi
 2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). 
 3. linear: estimates a linear model between the power excess envelope (same method from pySYD implement by Simon Campbell). Subtracts the linear background from power after smoothing.
 4. harvey: fits a harvey-like function to the granulation noise (based on pySYD method). Subtracts the linear background from power after smoothing.
+
+Can access the code by running the jupyter notebook. A prediction for nuamx is needed initially. For M9, M80 & M19, the relation $\nu_{\rm max} = 1.229^{-19}G_{\rm mag}^{16.89}$
