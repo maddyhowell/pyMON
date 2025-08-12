@@ -6,9 +6,36 @@ This code includes four ways to deal with the background due to granulation:
 
 1. white: This will only remove the white noise from the power spectrum before estimating $\nu_{\rm max}$
 2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). See Sreenivas et al. 2024 (https://arxiv.org/abs/2401.17557) for more details
-3. linear: estimates a linear model between the power excess envelope (same method from pySYD implement by Simon Campbell). Subtracts the linear background from power after smoothing.
-4. harvey: fits a harvey-like function to the granulation noise (based on pySYD method). Subtracts the linear background from power after smoothing. See Howell et al. 2022 (https://academic.oup.com/mnras/article/515/3/3184/6649831?login=false) for more details
+3. linear: estimates a linear model between the power excess envelope (implemented by Simon Campbell). Divides the linear background from power after smoothing. See Howell et al. 2022 (https://academic.oup.com/mnras/article/515/3/3184/6649831?login=false) for more details
+4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing.
 
-Can access the code by running the jupyter notebook. A prediction for numax is needed initially. For M9, M80 & M19, the relation $\nu_{\rm max} = 1.229\times 10^{-19}G_{\rm mag}^{16.89}$. The evolutionary stage is needed as well. The code is set up for metal-poor low mass red giants (RGB, HB, AGB).
+pyMON requires the following:
+- light curve (in units of flux and days)
+- power spectrum (in units of ppm^2/muHz and muHz)
+- an initial estimate for $\nu_{\rm max}$
+- an identification for the star (Star_ID)
 
-An example of how to run the code is provided in pyMON_example.ipynb
+Other required inputs to be passed in as a python dictionary include:
+- sm: smoothing parameter (same as pySYD). Set to unity for no extra smoothing
+- lowerp: the lower frequency of the power excess. If set to None, the lowerp frequency will be determined from a full width half max estimate
+- upperp: the lower frequency of the power excess. If set to None, the upperp frequency will be determined from a full width half max estimate
+- background_model: chosen from one of the options above. Note: there is a known bug for the harvey background model.
+- mc_iters: number of iterations for the mc uncertainty calculation. Set to '0' to not estimate uncertainties.
+- Dnu_relation: parameter to determine the $\Delta\nu$-$\nu_{\rm max}$ scaling relation to use, in the form $\Delta\nu = \rm coefficient \nu_{\rm max}^ {\rm exponent}$. There are two options for this parameter: i) provide a list in the form ```[coefficient, exponent]```, or ii) provide a string keyword that corresponds to a two element list in the dnu_relations.py file. This file can be edited to include your own relations. For a general relation, use the keyword ```pySYD```.
+
+See code for other inputs
+
+To run pyMON
+```python
+from pyMON.pyMON import pyMON
+inputs = {'sm': 1, 'lowerp': None, 'upperp': None, 'background_model': 'linear', 
+          'numax_est': 40, 'mc_iters': 500, 'Dnu_relation': 'pySYD'}
+pyMON_df = pyMON(star_psd.frequency, star_psd.power, star_lc.time, Star_ID, inputs)
+```
+
+This code returns a pandas dataframe with the inputs and measured numax, width and amplitude. A directory would of be created called './results/{Star_ID}/{background_model}' were three plots have been saved and a csv file (same information as in pyMON_df).
+
+An example is also provided in the jupyter notebook pyMON_example.ipynb. 
+
+
+
