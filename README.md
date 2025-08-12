@@ -10,6 +10,9 @@ This code includes four ways to model the background noise:
 4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing.
 
 ## Usage
+
+Run code from the same directory as where it is located.
+
 `pyMON` requires the following:
 - light curve (in units of flux and days)
 - power spectrum (in units of ppm^2/muHz and muHz)
