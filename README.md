@@ -21,7 +21,7 @@ Other required inputs to be passed in as a python dictionary include:
 - upperp: the lower frequency of the power excess. If set to None, the upperp frequency will be determined from a full width half max estimate
 - background_model: chosen from one of the options above. Note: there is a known bug for the harvey background model.
 - mc_iters: number of iterations for the mc uncertainty calculation. Set to '0' to not estimate uncertainties.
-- Dnu_relation: parameter to determine the $\Delta\nu$-$\nu_{\rm max}$ scaling relation to use, in the form $\Delta\nu = \rm coefficient \nu_{\rm max}^ {\rm exponent}$. There are two options for this parameter: i) provide a list in the form ```[coefficient, exponent]```, or ii) provide a string keyword that corresponds to a two element list in the dnu_relations.py file. This file can be edited to include your own relations. For a general relation, use the keyword ```pySYD```.
+- Dnu_relation: parameter to determine the $\Delta\nu$-$\nu_{\rm max}$ scaling relation to use, in the form $\Delta\nu = \rm coefficient\times \nu_{\rm max}^ {\rm exponent}$. There are two options for this parameter: i) provide a list in the form ```[coefficient, exponent]```, or ii) provide a string keyword that corresponds to a two element list in the dnu_relations.py file. This file can be edited to include your own relations. For a general relation, use the keyword ```pySYD```.
 
 See code for other inputs
 
