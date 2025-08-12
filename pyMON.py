@@ -9,9 +9,16 @@ import os
 from . import harvey_model as hm
 from . import dnu_relations as dr
 
-def ps_no_wnoise(frequency, power, Star_ID, verbose):
+def ps_no_wnoise(frequency, power, time, Star_ID, verbose):
 
-    idx = np.where(frequency > 274.7)[0][0]
+    # determine nyquist frequency from light curve
+    dt = np.median(np.diff(time))  # median handles uneven sampling better
+    nyquist_freq = 0.5 / (dt*24*60*60) *10**6 # units of muHz
+
+
+    nu_lower = nyquist_freq - nyquist_freq/10
+
+    idx = np.where(frequency > nu_lower)[0][0]
     w_noise = np.mean(power[idx:])
 
     if verbose:
@@ -21,7 +28,6 @@ def ps_no_wnoise(frequency, power, Star_ID, verbose):
     power_no_wnoise = power - w_noise
 
     return power_no_wnoise, w_noise
-
 
 def get_PS_mask(numax_est, lowerp, upperp):
     """ Get the boundaries of the power excess around the predicted numax """
@@ -131,7 +137,7 @@ def ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent
         bg = np.zeros(len(frequency))
         bg[:] = w_noise
         # print(bg)
-        power_slope_removed = ps_no_wnoise(frequency, power, Star_ID, verbose)
+        power_slope_removed = ps_no_wnoise(frequency, power, time, Star_ID, verbose)
 
     # power_slope_removed = power/bg
 
@@ -219,7 +225,7 @@ def find_parameters(frequency, power, numax_est, lowerp, upperp, verbose):
 def plot_power_excess(ax, frequency, power, pssm, numax_est, numax_measured, ps_mask, width_idx):
 
     # factor of 1.8 comes from the aspect ratio of the figure
-    left, bottom, width, height = [0.5, 0.56, 0.22, 0.22*1.8]
+    left, bottom, width, height = [0.75, 0.56, 0.22, 0.22*1.8]
     axin = ax.inset_axes([left, bottom, width, height])
 
     mask = np.ma.getmask(np.ma.masked_inside(frequency, ps_mask[0], ps_mask[1]))
@@ -279,15 +285,17 @@ def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mas
     ax.axvline(ps_mask[0], c = 'orange', ls = 'dashed')
     ax.axvline(ps_mask[1], c = 'orange', ls = 'dashed', label = 'Power excess envelope')
 
-    peaks, _ = find_peaks(power)
+
     if scale == 'linear':
+        peaks, _ = find_peaks(power[mask])
         if numax_est > 40:
             ax.set_xlim(1,280)
         else:
             ax.set_xlim(1,50)
 
-        ax.set_ylim(0,np.max(power[peaks]))
+        ax.set_ylim(0,np.max(power[mask][peaks]) + 10**int(np.log10(np.max(power[mask][peaks]))))
     else:
+        peaks, _ = find_peaks(power)
         ax.set_xlim(1,280)
         oom_min = np.floor(np.log10(np.min(power[peaks])))
         oom_max = np.floor(np.log10(np.max(power[peaks])))
@@ -312,17 +320,18 @@ def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mas
                s = 100, zorder = 5)
 
 
-    ax.set_ylabel(r'Power [$\rm ppm^2$/$\mu$Hz]');
-    ax.set_xlabel(r'Frequency [$\mu$Hz]');
+    ax.set_ylabel(r'Power [$\rm ppm^2$/$\mu$Hz]', fontsize = 20);
+    ax.set_xlabel(r'Frequency [$\mu$Hz]', fontsize = 20);
 
     ax.set_yscale(scale)
     ax.set_xscale(scale)
+    ax.tick_params(axis='both', which='major', labelsize=18)
 
 
     if scale == 'linear':
         plot_power_excess(ax, frequency, power, pssm-bg, numax_est, numax_measured, ps_mask, width_idx)
 
-    ax.legend(loc = 'best')
+    ax.legend(loc = 'upper left', fontsize = 15)
 
 
     if save:
@@ -352,7 +361,7 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
     else:
         dnu_coefficient, dnu_exponent = Dnu_relation
 
-    _____, w_noise = ps_no_wnoise(frequency, power, Star_ID, verbose)
+    _____, w_noise = ps_no_wnoise(frequency, power, time, Star_ID, verbose)
 
     # print(f'Using the {background_model} background model')
     power_slope_removed, bg = ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent, background_model, sm, lowerp, upperp, w_noise, verbose)
@@ -490,6 +499,9 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
         ax2.set_xlabel(r'Sampled width [$\mu$Hz]', fontsize = 20);
 
         ax2.legend(loc = 'best')
+        ax.tick_params(axis='both', which='major', labelsize=18)
+        ax1.tick_params(axis='both', which='major', labelsize=18)
+        ax2.tick_params(axis='both', which='major', labelsize=18)
 
 
         ax.set_yticks([]), ax1.set_yticks([]), ax2.set_yticks([]);
@@ -508,14 +520,32 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
     return numax_uncertainty, peak_uncertainty, width_uncertainty
 
 
+def pyMON(frequency, power, time, Star_ID, inputs, verbose = True, plot = True, save = True):
+    """ Main pyMON function. Calculates the numax of a star.
 
-def pyMON(frequency, power, time, Star_ID, inputs, mc_iters = False, verbose = True, plot = True, save = True):
-    """ Main pyMON function
-
+    Inputs
+    -------
+    frequency : array-lie
+        Frequency values in units of muHz
+    power : array-like
+        Power values in units of ppm^2/muHz
+    time : array-like
+        Time values in units of days
+    Star_ID : int or str
+        Identificaiton for target star. Used for directory names
+    inputs : dictionary
+        Dictionary of input parameters. Must include {'sm': value, 'lowerp': value, 'upperp': value, 'background_model': value, 'numax_est': value, 'mc_iters': value, 'Dnu_relation': value}
+    verbose : bool
+        If True, print results. Default is True
+    plot : bool
+        If True, plot power spectrum figure. Default is True
+    save : bool
+        If True, save data to a csv file and three figures (power spectrum in a linear and log scale, distributions of the mc sampling) to a directory './results/{Star_ID}/{background_model}/'. Default is True.
 
     Returns
     -------
     pyMON_df: pandas dataframe with the inputs and outputs of the pyMON function
+
     """
 
     file_path = f'./results/{Star_ID}/'
