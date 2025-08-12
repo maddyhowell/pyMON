@@ -7,15 +7,17 @@ from tqdm import tqdm
 from astropy.stats import mad_std
 import os
 from . import harvey_model as hm
-from . import dnu_relations as dr
 
-def ps_no_wnoise(frequency, power, Star_ID, verbose):
+import matplotlib as mpl
+# mpl.rcParams['font.size']=20
+
+def ps_no_wnoise(frequency, power, star_id, verbose):
 
     idx = np.where(frequency > 274.7)[0][0]
     w_noise = np.mean(power[idx:])
 
     if verbose:
-        print(f'Parameters for {Star_ID}:')
+        print(f'Parameters for {star_id}:')
         print('White noise metric= ', w_noise, ' ppm^2/muHz')
 
     power_no_wnoise = power - w_noise
@@ -41,13 +43,13 @@ def get_PS_mask(numax_est, lowerp, upperp):
 
     return ps_mask
 
-def get_linear_bg(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp):
+def get_linear_bg(frequency, power, numax_est, evol_stage, sm, lowerp, upperp):
     """
     Estimate the BG with a straight line. Linear in log!
 
     """
     ps_mask = get_PS_mask(numax_est, lowerp, upperp)
-    smps = ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp)
+    smps = ps_smooth(frequency, power, numax_est, evol_stage, sm, lowerp, upperp)
 
 
 
@@ -90,7 +92,7 @@ def get_linear_bg(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm
 
     return linbg, grad, c
 
-def ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent, background_model, sm, lowerp, upperp, w_noise, verbose):
+def ps_no_slope(frequency, power, time, numax_est, evol_stage, background_model, sm, lowerp, upperp, w_noise, verbose):
     """ This function should be executed after ps_no_wnoise
         Currently three background models are included: nuSYD (nu/numax)^-2 or a single harvey-like function or linear over FWHM of excess
     """
@@ -114,16 +116,16 @@ def ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent
         if verbose:
             hm.test_plot(frequency, power, bin_freq, bin_pow, model, improved_model = model2)
 
-        pssm = ps_smooth(frequency, power, numax_est, Dnu_relation, sm, lowerp, upperp)
+        pssm = ps_smooth(frequency, power, numax_est, evol_stage, sm, lowerp, upperp)
 
         bg = model2
 
         power_slope_removed = pssm - bg
 
     elif background_model == 'linear':
-        bg, grad, c = get_linear_bg(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp)
+        bg, grad, c = get_linear_bg(frequency, power, numax_est, evol_stage, sm, lowerp, upperp)
 
-        pssm = ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm,lowerp, upperp)
+        pssm = ps_smooth(frequency, power, numax_est, evol_stage, sm,lowerp, upperp)
 
         power_slope_removed = pssm - bg
 
@@ -131,7 +133,7 @@ def ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent
         bg = np.zeros(len(frequency))
         bg[:] = w_noise
         # print(bg)
-        power_slope_removed = ps_no_wnoise(frequency, power, Star_ID, verbose)
+        power_slope_removed = ps_no_wnoise(frequency, power, star_id, verbose)
 
     # power_slope_removed = power/bg
 
@@ -147,10 +149,14 @@ def boxcar_filter(frequency, power):
 
     return smooth_pow
 
-def ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp):
+def ps_smooth(frequency, power, numax_est, evol_stage, sm, lowerp, upperp):
     """ This function should be executed after ps_no_slope """
-
-    dnu_est = dnu_coefficient*(numax_est)**dnu_exponent
+    if evol_stage == 'RGB':
+        dnu_est = 0.3*(numax_est)**0.75
+    elif evol_stage == 'RHB':
+        dnu_est = 0.3*(numax_est)**0.86
+    elif evol_stage == 'AGB':
+        dnu_est = 0.3*(numax_est)**0.77
 
     resolution = frequency[1] - frequency[0]
 
@@ -168,6 +174,7 @@ def ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lo
 
 
     return pssm
+
 
 def find_parameters(frequency, power, numax_est, lowerp, upperp, verbose):
     """ This function should be executed after ps_smooth
@@ -216,10 +223,10 @@ def find_parameters(frequency, power, numax_est, lowerp, upperp, verbose):
 
     return numax, peak_power, width_idx
 
-def plot_power_excess(ax, frequency, power, pssm, numax_est, numax_measured, ps_mask, width_idx):
+def plot_power_excess(ax, frequency, power, pssm, numax_est, numax_measured, ps_mask, ylim_offset, width_idx):
 
     # factor of 1.8 comes from the aspect ratio of the figure
-    left, bottom, width, height = [0.5, 0.56, 0.22, 0.22*1.8]
+    left, bottom, width, height = [0.09, 0.1, 0.28, 0.2*1.8]
     axin = ax.inset_axes([left, bottom, width, height])
 
     mask = np.ma.getmask(np.ma.masked_inside(frequency, ps_mask[0], ps_mask[1]))
@@ -229,15 +236,15 @@ def plot_power_excess(ax, frequency, power, pssm, numax_est, numax_measured, ps_
 
     # ax.plot(mask_frequency, mask_power, c = 'black', alpha = 1, zorder = 0)
 
-    axin.plot(mask_frequency, mask_pssm, c = 'mediumpurple', alpha = 0.8, zorder = 1)
+    axin.plot(mask_frequency, mask_pssm, c = 'purple', alpha = 0.8, zorder = 1, lw = 3)
 
 
-    axin.axvline(numax_measured, color = 'mediumpurple', ls = 'dashed', lw = 3, zorder = 5)
+    axin.axvline(numax_measured, color = 'purple', ls = 'dotted', lw = 3, zorder = 5)
 
-    axin.axvline(numax_est, color = 'black', ls = 'solid', lw = 3, zorder = 5)
+    # axin.axvline(numax_est, color = 'black', ls = 'solid', lw = 3, zorder = 5)
 
     ii = np.where(frequency > numax_measured)[0][0]
-    axin.scatter(frequency[ii], pssm[ii], c = 'mediumpurple', s = 100, zorder = 5)
+    axin.scatter(frequency[ii], pssm[ii], c = 'purple', s = 100, zorder = 5)
 
 
     xticks = np.linspace(int(ps_mask[0]), int(ps_mask[1]), 5)
@@ -246,24 +253,32 @@ def plot_power_excess(ax, frequency, power, pssm, numax_est, numax_measured, ps_
     axin.set_xlim(int(ps_mask[0]), int(ps_mask[1]))
     peaks, _ = find_peaks(mask_power)
 
-    axin.set_title('Smoothed Power Excess')
+    axin.xaxis.set_tick_params(labelsize=20)
+    axin.yaxis.set_tick_params(labelsize=20)
 
-    axin.scatter(frequency[width_idx[0]],pssm[width_idx[0]], c = 'blue', s = 100)
-    axin.scatter(frequency[width_idx[1]],pssm[width_idx[1]], c = 'blue', s = 100)
-    axin.plot([frequency[width_idx[0]], frequency[width_idx[1]]], [pssm[width_idx[0]], pssm[width_idx[1]]],
-            c = 'blue', ls = 'dashed', zorder = 5)
+    axin.set_title('Smoothed Power Excess', fontsize = 25, fontweight = 'bold')
 
-def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, Star_ID, peak_measured, width_idx, width_measured, save, background_model):
+    # axin.scatter(frequency[width_idx[0]],pssm[width_idx[0]], c = 'blue', s = 100)
+    # axin.scatter(frequency[width_idx[1]],pssm[width_idx[1]], c = 'blue', s = 100)
+    # axin.plot([frequency[width_idx[0]], frequency[width_idx[1]]], [pssm[width_idx[0]], pssm[width_idx[1]]],
+    #         c = 'blue', ls = 'dashed', zorder = 5)
 
-    fig, ax = plt.subplots(figsize = (18,10));
+
+    # ax.set_ylim(0,np.max(mask_power[peaks]) + ylim_offset)
+
+def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, star_id, peak_measured, width_idx, width_measured, save, ylim_offset, background_model):
+    print('I am in plot_PS')
+    fig, ax = plt.subplots(figsize = (17,12));
     ax.plot(frequency, power, c = 'black', alpha = 0.5, zorder = 0);
+
+    scale_orig = scale
 
     if background_model == 'linear' or background_model == 'harvey':
         # To plot for a linear background, the smoothed curved needs to add background to match pySYD
 
-        ax.plot(frequency, pssm, c = 'mediumpurple', alpha = 1, label = 'Smoothed ps', zorder = 1, lw = 3);
+        ax.plot(frequency, pssm, c = 'purple', alpha = 1, label = 'Smoothed ps', zorder = 20, lw = 3);
     else:
-        ax.plot(frequency, pssm, c = 'mediumpurple', alpha = 1, label = 'Smoothed ps - bg', zorder = 1, lw = 3);
+        ax.plot(frequency, pssm, c = 'purple', alpha = 1, label = 'Smoothed ps - bg', zorder = 1, lw = 2);
 
 
     mask = np.ma.getmask(np.ma.masked_inside(frequency, ps_mask[0], ps_mask[1]))
@@ -273,20 +288,22 @@ def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mas
     ax.plot(mask_freq, mask_power, c = 'black', alpha = 1, zorder = 0);
 
 
-    ax.plot(frequency, bg, c = 'r', ls = 'solid', alpha = 0.8, label = 'Background model')
+    ax.plot(frequency, bg, c = 'r', ls = 'solid', alpha = 0.8, label = 'Background model', lw = 3)
 
     # ps_mask = get_PS_mask(numax_est, lowerp, upperp)
     ax.axvline(ps_mask[0], c = 'orange', ls = 'dashed')
-    ax.axvline(ps_mask[1], c = 'orange', ls = 'dashed', label = 'Power excess envelope')
+    ax.axvline(ps_mask[1], c = 'orange', ls = 'dashed', label = 'Power excess window')
 
     peaks, _ = find_peaks(power)
+
+    scale = 'log'
     if scale == 'linear':
         if numax_est > 40:
             ax.set_xlim(1,280)
         else:
             ax.set_xlim(1,50)
 
-        ax.set_ylim(0,np.max(power[peaks]))
+        ax.set_ylim(0,np.max(power[peaks]) + ylim_offset)
     else:
         ax.set_xlim(1,280)
         oom_min = np.floor(np.log10(np.min(power[peaks])))
@@ -295,72 +312,91 @@ def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mas
 
 
     peaks, _ = find_peaks(power)
+    # ax1.set_ylim(0,np.max(power[peaks]) + ylim_offset)
 
-    ax.axvline(numax_measured, color = 'mediumpurple', label = r'Measured $\nu_{\rm max}$ = ' + str(round(numax_measured,2)) + r' $\mu$Hz',
-                ls = 'dashed', lw = 3, zorder = 5)
+    ax.axvline(numax_measured, color = 'purple', label = r'Measured $\nu_{\rm max}$ = ' + str(round(numax_measured,2)) + r' $\mu$Hz',
+                ls = 'dotted', lw = 3, zorder = 5)
 
-    ax.axvline(np.nan, color = 'black', ls = 'solid', lw = 3, zorder = 5, label = r'Predicted $\nu_{\rm max}$ = ' + str(round(numax_est,2)) + r' $\mu$Hz')
-
-    ax.scatter(np.nan,np.nan, c = 'blue', s = 100)
-    ax.scatter(np.nan,np.nan, c = 'blue', s = 100)
-    ax.plot(np.nan, np.nan,
-            c = 'blue', ls = 'dashed', label = f'Width = {round(width_measured,2)}' + r' $\mu$Hz', zorder = 5)
+    # ax.axvline(np.nan, color = 'black', ls = 'solid', lw = 3, zorder = 5, label = r'Predicted $\nu_{\rm max}$ = ' + str(round(numax_est,2)) + r' $\mu$Hz')
+    #
+    # ax.scatter(np.nan,np.nan, c = 'blue', s = 100)
+    # ax.scatter(np.nan,np.nan, c = 'blue', s = 100)
+    # ax.plot(np.nan, np.nan,
+    #         c = 'blue', ls = 'dashed', label = f'Width = {round(width_measured,2)}' + r' $\mu$Hz', zorder = 5)
 
 
     ii = np.where(frequency > numax_measured)[0][0]
-    ax.scatter(np.nan, np.nan, c = 'mediumpurple', label = r'$P_{\rm peak} =$ '+ str(round(peak_measured,0)) + r'$\rm ppm^2$/$\mu$Hz',
-               s = 100, zorder = 5)
+    # ax.scatter(np.nan, np.nan, c = 'purple', label = r'$P_{\rm peak} =$ '+ str(round(peak_measured,0)) + r'$\rm ppm^2$/$\mu$Hz',
+    #            s = 100, zorder = 5)
 
 
-    ax.set_ylabel(r'Power [$\rm ppm^2$/$\mu$Hz]');
-    ax.set_xlabel(r'Frequency [$\mu$Hz]');
+    ax.set_ylabel(r'Power [$\rm ppm^2$/$\mu$Hz]', fontsize = 25);
+    ax.set_xlabel(r'Frequency [$\mu$Hz]', fontsize = 25);
 
     ax.set_yscale(scale)
     ax.set_xscale(scale)
 
+    ax.xaxis.set_tick_params(labelsize=25)
+    ax.yaxis.set_tick_params(labelsize=25)
 
-    if scale == 'linear':
-        plot_power_excess(ax, frequency, power, pssm-bg, numax_est, numax_measured, ps_mask, width_idx)
-
-    ax.legend(loc = 'best')
-
-
-    if save:
-        if not os.path.isdir(f'./results/{Star_ID}/{background_model}'):
-            os.mkdir(f'./results/{Star_ID}/{background_model}')
-
-        plt.savefig(f'./results/{Star_ID}/{background_model}/{Star_ID}_ps_{background_model}_bkg_{scale}.png')
 
     if scale == 'log':
+        plot_power_excess(ax, frequency, power, pssm-bg, numax_est, numax_measured, ps_mask, ylim_offset, width_idx)
+
+    ax.legend(loc = 'upper right', fontsize = 25)
+
+
+    # if save:
+    #     if not os.path.isdir(f'./results/{star_id}/{background_model}'):
+    #         os.mkdir(f'./results/{star_id}/{background_model}')
+
+
+    plt.savefig(f'./ps_eg.pdf', bbox_inches = 'tight')
+
+    if scale_orig == 'linear':
         plt.close()
 
-def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
+
+
+def main(frequency, power, time, numax_est, star_id, evol_stage, background_model = 'nuSYD', verbose = False, plot = False, save = False, ylim_offset = 0, testing = False, lowerp = None, upperp = None, sm = None):
     """ Code to run nusyd and functions above
     numax_est is an estimate for numax
+    testing flag will result in a plot of the power/(nu/numax)^-2 power spectrum
     returns measurement for numax """
 
-    sm = inputs['sm']
-    lowerp = inputs['lowerp']
-    upperp = inputs['upperp']
-    background_model = inputs['background_model']
-    numax_est = inputs['numax_est']
+    if not os.path.isdir(f'./results'):
+        os.mkdir(f'./results')
 
-    Dnu_relation = inputs['Dnu_relation']
-    if type(Dnu_relation) == str:
-        ## go to file and find Dnu_relation coefficient and exponent
-        dnu_coefficient, dnu_exponent = dr.Find_Dnu_relations(Dnu_relation)
-    else:
-        dnu_coefficient, dnu_exponent = Dnu_relation
+    if not os.path.isdir(f'./results/{star_id}'):
+        os.mkdir(f'./results/{star_id}')
 
-    _____, w_noise = ps_no_wnoise(frequency, power, Star_ID, verbose)
+
+    _____, w_noise = ps_no_wnoise(frequency, power, star_id, verbose)
 
     # print(f'Using the {background_model} background model')
-    power_slope_removed, bg = ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent, background_model, sm, lowerp, upperp, w_noise, verbose)
+    power_slope_removed, bg = ps_no_slope(frequency, power, time, numax_est, evol_stage, background_model, sm, lowerp, upperp, w_noise, verbose)
+
+    if testing:
+        fig, ax = plt.subplots(figsize = (18,10));
+        ax.plot(frequency, power_slope_removed, c = 'black', alpha = 0.6);
+
+        if numax_est > 40:
+            ax.set_xlim(1,280)
+        else:
+            ax.set_xlim(1,50)
+        peaks, _ = find_peaks(power)
+        ax.set_ylim(0,np.max(power[peaks]) + ylim_offset)
+
+        # ax.set_yscale('log');
+        # ax.set_xscale('log');
+
+        ax.set_ylabel(r'Power / ($\nu/\nu_{\rm max}$)');
+        ax.set_xlabel(r'Frequency [$\mu$Hz]');
 
 
     if background_model == 'nuSYD' or background_model == 'white':
         ## nuSYD smoothes after background correction. Linear is before
-        pssm = ps_smooth(frequency, power_slope_removed, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp)
+        pssm = ps_smooth(frequency, power_slope_removed, numax_est, evol_stage, sm, lowerp, upperp)
     else:
         pssm = power_slope_removed
 
@@ -376,10 +412,10 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
         ps_mask = get_PS_mask(numax_est, lowerp, upperp)
 
         if background_model == 'linear':
-            pssm = ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm,lowerp, upperp)
+            pssm = ps_smooth(frequency, power, numax_est, evol_stage, sm,lowerp, upperp)
 
-        plot_PS('linear', frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, Star_ID, peak_measured, width_idx, width_measured, save, background_model)
-        plot_PS('log', frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, Star_ID, peak_measured, width_idx, width_measured, save, background_model)
+        plot_PS('linear', frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, star_id, peak_measured, width_idx, width_measured, save, ylim_offset, background_model)
+        plot_PS('log', frequency, power, pssm, bg, numax_measured, numax_est, ps_mask, star_id, peak_measured, width_idx, width_measured, save, ylim_offset, background_model)
 
     if verbose:
         print('Measured numax = ', numax_measured)
@@ -387,43 +423,32 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
         print('Measured width = ', width_measured)
 
 
+
+    # plt.close();
+
     return numax_measured, peak_measured, width_measured
 
 
-def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, peak_measured, width_measured, inputs, verbose, plot, save):
+def main_mc(frequency, power, time, params, star_id, evol_stage, background_model = 'nuSYD', mc_iters = 200, verbose = False, plot = False, save = False, nyquist = 277.78, lowerp = None, upperp = None, sm = None):
     """ Calculates the uncertainty on numax using the same method as pySYD
         params includes [numax, peak, width]"""
 
-    sm = inputs['sm']
-    lowerp = inputs['lowerp']
-    upperp = inputs['upperp']
-    background_model = inputs['background_model']
-    mc_iters = inputs['mc_iters']
-
-    # determine nyquist frequency from light curve
-    dt = np.median(np.diff(time))  # median handles uneven sampling better
-    nyquist_freq = 0.5 / (dt*24*60*60) *10**6 # units of muHz
-
-    bg_mask = [1, nyquist_freq]
+    bg_mask = [1, nyquist]
     i = 0
+    numax, peak, width = params
     numax_sampling, peak_sampling, width_sampling = [], [], []
-    numax_temp = numax_measured
 
     while i < mc_iters:
         if i == 0:
             # Switch to critically-sampled PS if sampling
-            ## mhow: I dont know how that critically samples the array (just creates a mask between 1 to nyquist_freq freq)
+            ## mhow: I dont know how that critically samples the array (just creates a mask between 1 to nyquist freq)
             mask = np.ma.getmask(np.ma.masked_inside(frequency, bg_mask[0], bg_mask[1]))
 
             frequency_cp, power_cp = np.copy(frequency[mask]), np.copy(power[mask])
             resolution = frequency_cp[1] - frequency_cp[0]
             random_pow = (np.random.chisquare(2, len(frequency_cp))*power_cp)/2.0
 
-            # update numax values in inputs
-            inputs2 = inputs
-            inputs2['numax_est'] = numax_temp
-
-            numax_temp, peak_temp, width_temp = MeasureNumax(Star_ID, frequency_cp, random_pow, time, inputs2, verbose = False, plot = False, save = False)
+            numax_temp, peak_temp, width_temp = main(frequency_cp, random_pow, time, numax, star_id, evol_stage, background_model, lowerp = lowerp, upperp = upperp, sm = sm)
 
             numax_sampling.append(numax_temp)
             peak_sampling.append(peak_temp)
@@ -437,10 +462,7 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
             random_pow = (np.random.chisquare(2, len(frequency_cp))*power_cp)/2.0
             pbar.update(1)
 
-            inputs2 = inputs
-            inputs2['numax_est'] = numax_temp
-
-            numax_temp, peak_temp, width_temp = MeasureNumax(Star_ID, frequency_cp, random_pow, time, inputs2, verbose = False, plot = False, save = False)
+            numax_temp, peak_temp, width_temp = main(frequency_cp, random_pow, time, numax, star_id, evol_stage, background_model, lowerp = lowerp, upperp = upperp, sm = sm)
 
             numax_sampling.append(numax_temp)
             peak_sampling.append(peak_temp)
@@ -448,6 +470,7 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
 
         i += 1
 
+    # pbar.close()
 
     numax_uncertainty = mad_std(numax_sampling)
     if numax_uncertainty == 0:
@@ -457,31 +480,24 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
     width_uncertainty = mad_std(width_sampling, ignore_nan = True)
 
     if verbose:
-        print(f'Parameters for {Star_ID}:')
-        print(f'Nyquist frequency (from light curve) =', nyquist_freq, 'muHz')
-        print('Measured numax = ', numax_measured, '+/-', numax_uncertainty, 'muHz (', numax_uncertainty/numax_measured*100, '%)')
-        print('Measured Amplitude = ', peak_measured, '+/-', peak_uncertainty, 'ppm^2/muHz')
-        print('Measured width = ', width_measured, '+/-', width_uncertainty, 'muHz')
+        print(f'Parameters for {star_id}:')
+        print('Measured numax = ', numax, '+/-', numax_uncertainty, 'muHz (', numax_uncertainty/numax*100, '%)')
+        print('Measured Amplitude = ', peak, '+/-', peak_uncertainty, 'ppm^2/muHz')
+        print('Measured width = ', width, '+/-', width_uncertainty, 'muHz')
 
 
 
     if plot:
         fig, (ax, ax1, ax2) = plt.subplots(1, 3, figsize = (25,8));
 
-        ax.hist(numax_sampling, color = 'mediumpurple', bins=20, histtype='step', lw=3, facecolor='0.75');
-        ax.hist(numax_sampling, color = 'mediumpurple', bins=20, alpha = 0.6);
+        ax.hist(numax_sampling, color = 'purple', bins=20, histtype='step', lw=2.5, facecolor='0.75');
+        ax.axvline(numax, c = 'purple', ls = 'dashed')
 
-        ax.axvline(numax_measured, c = 'k', ls = 'dashed', lw = 2)
+        ax1.hist(peak_sampling, color = 'purple', bins=20, histtype='step', lw=2.5, facecolor='0.75');
+        ax1.axvline(peak, c = 'purple', ls = 'dashed')
 
-        ax1.hist(peak_sampling, color = 'mediumpurple', bins=20, histtype='step', lw=3, facecolor='0.75');
-        ax1.hist(peak_sampling, color = 'mediumpurple', bins=20, alpha = 0.6);
-
-        ax1.axvline(peak_measured, c = 'k', ls = 'dashed', lw = 2)
-
-        ax2.hist(width_sampling, color = 'mediumpurple', bins=20, histtype='step', lw=3, facecolor='0.75');
-        ax2.hist(width_sampling, color = 'mediumpurple', bins=20, alpha = 0.6);
-
-        ax2.axvline(width_measured, c = 'k', ls = 'dashed', lw = 2, label = 'Measured parameter')
+        ax2.hist(width_sampling, color = 'purple', bins=20, histtype='step', lw=2.5, facecolor='0.75');
+        ax2.axvline(width, c = 'purple', ls = 'dashed', label = 'Measured parameter')
 
 
 
@@ -497,60 +513,12 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
 
 
         if save:
-            if not os.path.isdir(f'./results/{Star_ID}/{background_model}'):
-                os.mkdir(f'./results/{Star_ID}/{background_model}')
+            if not os.path.isdir(f'./results/{star_id}/{background_model}'):
+                os.mkdir(f'./results/{star_id}/{background_model}')
 
-            plt.savefig(f'./results/{Star_ID}/{background_model}/{Star_ID}_samples_{background_model}_bkg.png')
+            plt.savefig(f'./results/{star_id}/{background_model}/{star_id}_samples_{background_model}_bkg.png')
 
-
+        # plt.close();
 
 
     return numax_uncertainty, peak_uncertainty, width_uncertainty
-
-
-
-def pyMON(frequency, power, time, Star_ID, inputs, mc_iters = False, verbose = True, plot = True, save = True):
-    """ Main pyMON function
-
-
-    Returns
-    -------
-    pyMON_df: pandas dataframe with the inputs and outputs of the pyMON function
-    """
-
-    file_path = f'./results/{Star_ID}/'
-
-    if not os.path.isdir('./results'):
-        os.mkdir('./results')
-
-    if not os.path.isdir(file_path):
-        os.mkdir(file_path)
-
-
-    numax_measured, peak_measured, width_measured = MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save)
-
-    mc_iters = inputs['mc_iters']
-    if mc_iters != 0:
-        numax_uncertainty, peak_uncertainty, width_uncertainty = MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, peak_measured, width_measured, inputs, verbose, plot, save)
-    else:
-        numax_uncertainty, peak_uncertainty, width_uncertainty = None, None, None
-
-
-    pyMON_dict = {'Star_ID': [Star_ID], 'numax_predicted': [inputs['numax_est']], 'Dnu_relation': [inputs['Dnu_relation']],
-              'lowerp': [inputs['lowerp']], 'upperp': [inputs['upperp']], 'sm': [inputs['sm']], 'background_model': [inputs['background_model']],
-              'numax_measured': [numax_measured], 'numax_uncertainty': [numax_uncertainty],
-              'peak_measured': [peak_measured], 'peak_uncertainty': [peak_uncertainty],
-              'width_measured': [width_measured], 'width_uncertainty': [width_uncertainty], 'mc_iters': [inputs['mc_iters']]
-             }
-
-    pyMON_df = pd.DataFrame(pyMON_dict)
-
-    if save:
-        if not os.path.exists(file_path+f'{Star_ID}_pyMON_results.csv'):
-            # If the file doesn't exist, write with header and no index
-           pyMON_df.to_csv(file_path+f'{Star_ID}_pyMON_results.csv', mode='a', index=False, header=True)
-        else:
-            # If the file exists, append without header and no index
-            pyMON_df.to_csv(file_path+f'{Star_ID}_pyMON_results.csv', mode='a', index=False, header = False)
-
-    return pyMON_df
