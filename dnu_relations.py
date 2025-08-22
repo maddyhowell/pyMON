@@ -18,7 +18,7 @@ def Find_Dnu_relations(keyword):
     Dnu_relations = {'GC_RGB': [0.3,0.75],
                      'GC_RHB': [0.3, 0.86],
                      'GC_AGB': [0.3, 0.77],
-                     'pySYD': [0.22, 0.797],
+                     'Yu18': [0.267, 0.764],
                      }
 
     return Dnu_relations[keyword]
