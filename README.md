@@ -13,7 +13,7 @@ This code includes four ways to model the background noise:
 
 Run code from the same directory as where it is located.
 
-`pyMON` requires the following:
+`pyMON` requires the following inputs:
 - light curve (in units of flux and days)
 - power spectrum (in units of ppm^2/muHz and muHz)
 - an initial estimate for $\nu_{\rm max}$
@@ -25,15 +25,17 @@ Other required inputs to be passed in as a python dictionary include:
 - upperp: the lower frequency of the power excess. If set to None, the upperp frequency will be determined from a full width half max estimate
 - background_model: chosen from one of the options above. Note: there is a known bug for the harvey background model.
 - mc_iters: number of iterations for the mc sampling uncertainty routine. Set to '0' to not estimate uncertainties.
-- Dnu_relation: parameter to determine the $\Delta\nu$-$\nu_{\rm max}$ scaling relation to use, in the form $\Delta\nu = \rm coefficient\times \nu_{\rm max}^ {\rm exponent}$. There are two options for this parameter: i) provide a list in the form ```[coefficient, exponent]```, or ii) provide a string keyword that corresponds to a two element list in the dnu_relations.py file. This file can be edited to include your own relations. For a general relation, use the keyword 'pySYD'.
+- Dnu_relation: parameter to determine the $\Delta\nu$-$\nu_{\rm max}$ scaling relation to use, in the form $\Delta\nu = \rm coefficient\times \nu_{\rm max}^ {\rm exponent}$. There are two options for this parameter: i) provide a list in the form ```[coefficient, exponent]```, or ii) provide a string keyword that corresponds to a two element list in the dnu_relations.py file. This file can be edited to include your own relations. For a general relation derived from 16,000 Kepler stars, use the key 'Yu18' (see Yu et al., 2018 for details https://iopscience.iop.org/article/10.3847/1538-4365/aaaf74#apjsaaaf74s3)
 
 See code for other default inputs.
 
-To run `pyMON`
+***Maddy TODO: confirm directory location of pyMON code to run in a jupyter notebook***
+
+To run `pyMON` 
 ```python
 from pyMON.pyMON import pyMON
 inputs = {'sm': 1, 'lowerp': None, 'upperp': None, 'background_model': 'linear', 
-          'numax_est': 40, 'mc_iters': 500, 'Dnu_relation': 'pySYD'}
+          'numax_est': 40, 'mc_iters': 500, 'Dnu_relation': 'Yu18'}
 pyMON_df = pyMON(star_psd.frequency, star_psd.power, star_lc.time, Star_ID, inputs)
 ```
 
