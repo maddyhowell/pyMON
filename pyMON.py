@@ -6,8 +6,8 @@ from scipy.signal import find_peaks
 from tqdm import tqdm
 from astropy.stats import mad_std
 import os
-from . import harvey_model as hm
-from . import dnu_relations as dr
+import harvey_model as hm
+import dnu_relations as dr
 
 def ps_no_wnoise(frequency, power, time, Star_ID, verbose):
 
