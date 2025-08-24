@@ -29,11 +29,9 @@ Other required inputs to be passed in as a python dictionary include:
 
 See code for other default inputs.
 
-***Maddy TODO: confirm directory location of pyMON code to run in a jupyter notebook***
-
-To run `pyMON` 
+Run `pyMON` in the same directory as the code, via the following:
 ```python
-from pyMON.pyMON import pyMON
+from pyMON import pyMON
 inputs = {'sm': 1, 'lowerp': None, 'upperp': None, 'background_model': 'linear', 
           'numax_est': 40, 'mc_iters': 500, 'Dnu_relation': 'Yu18'}
 pyMON_df = pyMON(star_psd.frequency, star_psd.power, star_lc.time, Star_ID, inputs)
