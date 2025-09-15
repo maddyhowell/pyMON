@@ -6,8 +6,8 @@ from scipy.signal import find_peaks
 from tqdm import tqdm
 from astropy.stats import mad_std
 import os
-import harvey_model as hm
-import dnu_relations as dr
+from . import harvey_model as hm
+from . import dnu_relations as dr
 
 def ps_no_wnoise(frequency, power, time, Star_ID, verbose):
 
@@ -17,6 +17,9 @@ def ps_no_wnoise(frequency, power, time, Star_ID, verbose):
 
 
     nu_lower = nyquist_freq - nyquist_freq/10
+
+    if nu_lower > frequency[-1]:
+        nu_lower = frequency[-1] - frequency[-1]/10
 
     idx = np.where(frequency > nu_lower)[0][0]
     w_noise = np.mean(power[idx:])
@@ -381,6 +384,15 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
     else:
         width_measured = frequency[width_idx[0]] - frequency[width_idx[1]]
 
+    if background_model == "nuSYD":
+        if verbose:
+            print('-------------------------------------------------------------')
+            print('Correction applied from Sreenivas et al. 2024 for nuSYD model!')
+            print('-------------------------------------------------------------')
+            print('\n')
+        sigma_actual = 0.248*((width_measured)**1.08)
+        numax_measured =  (numax_measured**2 - 2*(sigma_actual)**2)/numax_measured
+
     if plot:
         ps_mask = get_PS_mask(numax_est, lowerp, upperp)
 
@@ -397,7 +409,6 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
 
 
     return numax_measured, peak_measured, width_measured
-
 
 def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, peak_measured, width_measured, inputs, verbose, plot, save):
     """ Calculates the uncertainty on numax using the same method as pySYD
@@ -518,7 +529,6 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
 
 
     return numax_uncertainty, peak_uncertainty, width_uncertainty
-
 
 def pyMON(frequency, power, time, Star_ID, inputs, verbose = True, plot = True, save = True):
     """ Main pyMON function. Calculates the numax of a star.
