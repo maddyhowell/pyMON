@@ -65,4 +65,23 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
-
+If you use the `nuSYD` model, please include the following citation [Sreenivas et al., 2024](https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.3477S/abstract)
+```tex
+@ARTICLE{2024MNRAS.530.3477S,
+       author = {{Sreenivas}, K.~R. and {Bedding}, Timothy R. and {Li}, Yaguang and {Huber}, Daniel and {Crawford}, Courtney L. and {Stello}, Dennis and {Yu}, Jie},
+        title = "{A simple method to measure {\ensuremath{\nu}}$_{max}$ for asteroseismology: application to 16 000 oscillating Kepler red giants}",
+      journal = {\mnras},
+     keywords = {asteroseismology, stars: late-type, stars: oscillations, Astrophysics - Solar and Stellar Astrophysics, Astrophysics - Earth and Planetary Astrophysics},
+         year = 2024,
+        month = may,
+       volume = {530},
+       number = {3},
+        pages = {3477-3487},
+          doi = {10.1093/mnras/stae991},
+archivePrefix = {arXiv},
+       eprint = {2401.17557},
+ primaryClass = {astro-ph.SR},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.3477S},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
