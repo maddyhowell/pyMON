@@ -22,7 +22,7 @@ Run code from the same directory as where it is located.
 - an identification for the star (Star_ID)
 
 Other required inputs to be passed in as a python dictionary include:
-- sm: smoothing parameter (same as pySYD). Set to unity for no extra smoothing
+- sm: smoothing parameter (same as pySYD). Default will be 2, to ensure sufficient smoothing for low numax stars.
 - lowerp: the lower frequency of the power excess. If set to None, the lowerp frequency will be determined from a full width half max estimate
 - upperp: the lower frequency of the power excess. If set to None, the upperp frequency will be determined from a full width half max estimate
 - background_model: chosen from one of the options above. Note: there is a known bug for the harvey background model.
