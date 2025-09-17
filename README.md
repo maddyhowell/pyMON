@@ -44,7 +44,7 @@ This code returns a pandas dataframe with the inputs and measured numax, width a
 Note: if the power spectrum is noisy, sometimes the width estimation doesn't work. This does not impact the estimation of $\nu_{\rm max}$.
 
 ## Example Jupyter Notebook
-An example is also provided in the jupyter notebook pyMON_tutorial.ipynb. 
+An example for red giant star KIC 2707716 using the KEPSEISMIC light curve and power spectrum is provided in the jupyter notebook pyMON_tutorial.ipynb. 
 
 ## Citing
 If you use `pyMON`, please include the following citation [Howell et al., 2025](https://ui.adsabs.harvard.edu/abs/2025MNRAS.536.1389H/abstract)
