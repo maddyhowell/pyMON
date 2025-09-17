@@ -39,7 +39,7 @@ inputs = {'sm': 1, 'lowerp': None, 'upperp': None, 'background_model': 'linear',
 pyMON_df = pyMON(star_psd.frequency, star_psd.power, star_lc.time, Star_ID, inputs)
 ```
 
-This code returns a pandas dataframe with the inputs and measured numax, width and amplitude. A directory would of be created called './results/{Star_ID}/{background_model}' where three plots have been saved and a csv file (same information as in pyMON_df).
+This code returns a pandas dataframe with the inputs and measured numax, width and amplitude. A directory will be created called './results/{Star_ID}/{background_model}' where three plots have been saved and a csv file (same information as in pyMON_df).
 
 Note: if the power spectrum is noisy, sometimes the width estimation doesn't work. This does not impact the estimation of $\nu_{\rm max}$.
 
