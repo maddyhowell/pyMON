@@ -5,9 +5,11 @@ This pipeline estimates numax and the uncertainty from a power spectra. $\nu_{\r
 This code includes four ways to model the background noise:
 
 1. white: This will only remove the white noise from the power spectrum before estimating $\nu_{\rm max}$
-2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). See [Sreenivas et al. 2024](https://arxiv.org/abs/2401.17557) for more details
+2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). See [Sreenivas et al. 2024](https://arxiv.org/abs/2401.17557) for more details. **Note: if the power spectrum is noisy, the width measurement can fail. This will affect the numax measurement using this model**
 3. linear: estimates a linear model between the power excess envelope (implemented by Simon Campbell). Divides the linear background from power after smoothing. See [Howell et al. 2022](https://ui.adsabs.harvard.edu/abs/2022MNRAS.515.3184H/abstract) for more details
-4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing.
+4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing. **Note: harvey-like function is not fully implemented**
+
+`pyMON` was developed to use as a back-up option to `pySYD` for when signal-to-noise of the power spectrum is low. We recommend using the `linear` model for these cases. 
 
 ## Usage
 
@@ -65,6 +67,29 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
+AND include that " `pyMON` is adapted from `pySYD`" with the following cititation [Chontos et al., 2022](https://joss.theoj.org/papers/10.21105/joss.03331)
+```tex
+@ARTICLE{2022JOSS....7.3331C,
+       author = {{Chontos}, Ashley and {Huber}, Daniel and {Sayeed}, Maryum and {Yamsiri}, Pavadol},
+        title = "{pySYD: Automated measurements of global asteroseismic parameters}",
+      journal = {The Journal of Open Source Software},
+     keywords = {Python, fundamental stellar properties, solar-like oscillations, stellar oscillations, stellar astrophysics, asteroseismology, astronomy, global asteroseismology, Astrophysics - Solar and Stellar Astrophysics, Astrophysics - Instrumentation and Methods for Astrophysics},
+         year = 2022,
+        month = nov,
+       volume = {7},
+       number = {79},
+          eid = {3331},
+        pages = {3331},
+          doi = {10.21105/joss.03331},
+archivePrefix = {arXiv},
+       eprint = {2108.00582},
+ primaryClass = {astro-ph.SR},
+       adsurl = {https://ui.adsabs.harvard.edu/abs/2022JOSS....7.3331C},
+      adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+```
+
+
 If you use the `nuSYD` model, please include the following citation [Sreenivas et al., 2024](https://ui.adsabs.harvard.edu/abs/2024MNRAS.530.3477S/abstract)
 ```tex
 @ARTICLE{2024MNRAS.530.3477S,
@@ -85,3 +110,9 @@ archivePrefix = {arXiv},
       adsnote = {Provided by the SAO/NASA Astrophysics Data System}
 }
 ```
+
+## Known Issues that are Under Development
+
+Width measurement of the power excess: if you have noisy data, `pyMON` might be fail to identify the position of the FWHM on the left side, and hence will not measure an accurate width. This does not affect the measurement of numax or its uncertainty (unless you are using the `nuSYD` model)
+
+Harvey-like function model: this currently doesn't work on low numax stars. Further tests are needed.
