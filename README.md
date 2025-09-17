@@ -9,7 +9,7 @@ This code includes four ways to model the background noise:
 3. linear: estimates a linear model between the power excess envelope (implemented by Simon Campbell). Divides the linear background from power after smoothing. See [Howell et al. 2022](https://ui.adsabs.harvard.edu/abs/2022MNRAS.515.3184H/abstract) for more details
 4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing. **Note: harvey-like function is not fully implemented**
 
-`pyMON` was developed to use as a back-up option to `pySYD` for when signal-to-noise of the power spectrum is low. We recommend using the `linear` model for these cases. 
+`pyMON` was developed to use as a back-up option to `pySYD` for when the signal-to-noise of the star's power spectrum is low and delta nu cannot be easily measured. We recommend using the `linear` model for these cases. 
 
 ## Usage
 
