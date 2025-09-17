@@ -34,7 +34,7 @@ See code for other default inputs.
 Run `pyMON` in the same directory as the code, via the following:
 ```python
 from pyMON import pyMON
-inputs = {'sm': 1, 'lowerp': None, 'upperp': None, 'background_model': 'linear', 
+inputs = {'sm': 2, 'lowerp': None, 'upperp': None, 'background_model': 'linear', 
           'numax_est': 40, 'mc_iters': 500, 'Dnu_relation': 'Yu18'}
 pyMON_df = pyMON(star_psd.frequency, star_psd.power, star_lc.time, Star_ID, inputs)
 ```
