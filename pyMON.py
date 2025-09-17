@@ -167,8 +167,8 @@ def ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lo
     if sm == None:
         numax_sun = 3090.00
         sm = 4.*(numax_est/numax_sun)**0.2
-        if sm < 1.:
-            sm = 1.
+    if sm < 2.:   # update on 16th sept 2025 to address issues of measuring numax at low frequencies. the smoothing condition needs to be changed to a minimum of 2 Dnu for low numax stars
+            sm = 2.
 
 
     sig = (sm*(dnu_est/resolution))/np.sqrt(8.0*np.log(2.0))
