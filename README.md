@@ -111,6 +111,4 @@ archivePrefix = {arXiv},
 
 ## Known Issues that are Under Development
 
-Width measurement of the power excess: if you have noisy data, `pyMON` might be fail to identify the position of the FWHM on the left side, and hence will not measure an accurate width. This does not affect the measurement of numax or its uncertainty (unless you are using the `nuSYD` model)
-
 Harvey-like function model: this currently doesn't work on low numax stars. Further tests are needed.
