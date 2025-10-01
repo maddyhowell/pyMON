@@ -5,7 +5,7 @@ This pipeline estimates numax and the uncertainty from a power spectra. $\nu_{\r
 This code includes four ways to model the background noise:
 
 1. white: This will only remove the white noise from the power spectrum before estimating $\nu_{\rm max}$
-2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). See [Sreenivas et al. 2024](https://arxiv.org/abs/2401.17557) for more details. **Note: if the power spectrum is noisy, the width measurement can fail. This will affect the numax measurement using this model**
+2. nuSYD: divides by $(\nu/\nu_{\rm max})^{-2}$ to the power before smoothing. Removes power at lower frequencies (i.e. just removed Granulation noise). See [Sreenivas et al. 2024](https://arxiv.org/abs/2401.17557) for more details. 
 3. linear: estimates a linear model between the power excess envelope (implemented by Simon Campbell). Divides the linear background from power after smoothing. See [Howell et al. 2022](https://ui.adsabs.harvard.edu/abs/2022MNRAS.515.3184H/abstract) for more details
 4. harvey: fits a harvey-like function to the granulation noise. Divides the background from power after smoothing. **Note: harvey-like function is not fully implemented**
 
