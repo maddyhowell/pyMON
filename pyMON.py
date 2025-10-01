@@ -208,20 +208,30 @@ def find_parameters(frequency, power, numax_est, lowerp, upperp, verbose):
     if len(np.where(np.logical_and(power < peak_power/2, frequency > numax))[0]) == 0:
         nn, mm = 0,0
         # print('Cannot find the width!')
-    elif frequency[np.where(np.logical_and(power < peak_power/2, frequency > numax))[0][0]] > numax_est + 0.5*numax_est:
+    elif frequency[np.where(np.logical_and(power < peak_power/2, frequency > numax))[0][0]] > numax + 0.5*numax:
     ### if the second point doesn exist within  then just extend the left side
         if verbose:
-            print('Right hand side of width cannot be found')
+            print('Right hand side of width cannot be found. Estimating based on left hand side.')
 
-        nn = np.where(power > peak_power/2)[0][0]
+        nn = np.where(np.logical_and(power < peak_power/2, frequency < numax))[0][-1]
 
         freq_rightside = numax + (numax-frequency[nn])
 
         mm = np.where(frequency > freq_rightside)[0][0]
     else:
-        nn, mm = np.where(power > peak_power/2)[0][0], np.where(np.logical_and(power < peak_power/2, frequency > numax))[0][0]
+        #right hand side
+        mm = np.where(np.logical_and(power < peak_power/2, frequency > numax))[0][0]
 
-    width_idx = [mm, nn]
+        # left hand side
+        try:
+            nn = np.where(np.logical_and(power < peak_power/2, frequency < numax))[0][-1]
+        except IndexError:
+            if verbose:
+                print('Left hand side of width cannot be found. Estimating based on right hand side.')
+            freq_leftside = numax - (numax-frequency[mm])
+            nn = np.where(frequency > freq_leftside)[0][0]
+
+    width_idx = [nn, mm]
 
     return numax, peak_power, width_idx
 
@@ -338,10 +348,10 @@ def plot_PS(scale, frequency, power, pssm, bg, numax_measured, numax_est, ps_mas
 
 
     if save:
-        if not os.path.isdir(f'./results/{Star_ID}/{background_model}'):
-            os.mkdir(f'./results/{Star_ID}/{background_model}')
+        if not os.path.isdir(f'./pyMON_results/{Star_ID}/{background_model}'):
+            os.mkdir(f'./pyMON_results/{Star_ID}/{background_model}')
 
-        plt.savefig(f'./results/{Star_ID}/{background_model}/{Star_ID}_ps_{background_model}_bkg_{scale}.png')
+        plt.savefig(f'./pyMON_results/{Star_ID}/{background_model}/{Star_ID}_ps_{background_model}_bkg_{scale}.png')
 
     if scale == 'log':
         plt.close()
@@ -382,7 +392,7 @@ def MeasureNumax(Star_ID, frequency, power, time, inputs, verbose, plot, save):
     if width_idx == [0,0]:
         width_measured = np.nan
     else:
-        width_measured = frequency[width_idx[0]] - frequency[width_idx[1]]
+        width_measured = frequency[width_idx[1]] - frequency[width_idx[0]]
 
     if background_model == "nuSYD":
         if verbose:
@@ -520,10 +530,10 @@ def MeasureNumaxUncertainty(Star_ID, frequency, power, time, numax_measured, pea
 
 
         if save:
-            if not os.path.isdir(f'./results/{Star_ID}/{background_model}'):
-                os.mkdir(f'./results/{Star_ID}/{background_model}')
+            if not os.path.isdir(f'./pyMON_results/{Star_ID}/{background_model}'):
+                os.mkdir(f'./pyMON_results/{Star_ID}/{background_model}')
 
-            plt.savefig(f'./results/{Star_ID}/{background_model}/{Star_ID}_samples_{background_model}_bkg.png')
+            plt.savefig(f'./pyMON_results/{Star_ID}/{background_model}/{Star_ID}_samples_{background_model}_bkg.png')
 
 
 
@@ -550,7 +560,7 @@ def pyMON(frequency, power, time, Star_ID, inputs, verbose = True, plot = True, 
     plot : bool
         If True, plot power spectrum figure. Default is True
     save : bool
-        If True, save data to a csv file and three figures (power spectrum in a linear and log scale, distributions of the mc sampling) to a directory './results/{Star_ID}/{background_model}/'. Default is True.
+        If True, save data to a csv file and three figures (power spectrum in a linear and log scale, distributions of the mc sampling) to a directory './pyMON_results/{Star_ID}/{background_model}/'. Default is True.
 
     Returns
     -------
@@ -558,10 +568,10 @@ def pyMON(frequency, power, time, Star_ID, inputs, verbose = True, plot = True, 
 
     """
 
-    file_path = f'./results/{Star_ID}/'
+    file_path = f'./pyMON_results/{Star_ID}/'
 
-    if not os.path.isdir('./results'):
-        os.mkdir('./results')
+    if not os.path.isdir('./pyMON_results'):
+        os.mkdir('./pyMON_results')
 
     if not os.path.isdir(file_path):
         os.mkdir(file_path)
