@@ -111,4 +111,4 @@ archivePrefix = {arXiv},
 
 ## Known Issues that are Under Development
 
-Harvey-like function model: this currently doesn't work on low numax stars. Further tests are needed.
+Harvey-like function model: need to implement more input parmeters to modify the harvey-like models. This model currently doesn't work on low numax stars. Further tests are needed.
