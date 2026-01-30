@@ -123,7 +123,7 @@ def ps_no_slope(frequency, power, time, numax_est, dnu_coefficient, dnu_exponent
         if verbose:
             hm.test_plot(frequency, power, bin_freq, bin_pow, model, improved_model = model2)
 
-        pssm = ps_smooth(frequency, power, numax_est, Dnu_relation, sm, lowerp, upperp)
+        pssm = ps_smooth(frequency, power, numax_est, dnu_coefficient, dnu_exponent, sm, lowerp, upperp)
 
         bg = model2
 
