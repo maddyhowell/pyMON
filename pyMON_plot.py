@@ -6,7 +6,7 @@ from scipy.signal import find_peaks
 from tqdm import tqdm
 from astropy.stats import mad_std
 import os
-from . import harvey_model as hm
+import harvey_model as hm
 
 import matplotlib as mpl
 # mpl.rcParams['font.size']=20
